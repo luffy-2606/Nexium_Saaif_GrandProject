@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+MONGODB_SETUP.md
+N8N_SETUP.md
+SUPABASE_SETUP.md

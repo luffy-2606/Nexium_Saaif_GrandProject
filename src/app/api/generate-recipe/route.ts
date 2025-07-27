@@ -81,22 +81,40 @@ Format the response as JSON with the following structure:
   // Option 2: Using n8n webhook (if URL is provided)
   if (process.env.N8N_WEBHOOK_URL) {
     try {
+      console.log('Calling n8n webhook for recipe generation...')
+      
       const response = await fetch(process.env.N8N_WEBHOOK_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(process.env.N8N_WEBHOOK_TOKEN && {
+            'Authorization': `Bearer ${process.env.N8N_WEBHOOK_TOKEN}`
+          })
         },
         body: JSON.stringify({
-          type: 'recipe_generation',
-          data: requestData,
-          prompt: prompt
+          data: requestData
         }),
       })
 
-      const recipeData = await response.json()
-      return recipeData
+      if (!response.ok) {
+        throw new Error(`n8n webhook responded with ${response.status}: ${response.statusText}`)
+      }
+
+      const result = await response.json()
+      console.log('n8n webhook response:', result)
+
+      // Check if n8n returned a successful response
+      if (result.success && result.recipe) {
+        return result.recipe
+      } else if (result.recipe) {
+        // Sometimes n8n might not include success flag but still return recipe
+        return result.recipe
+      } else {
+        throw new Error('n8n did not return a valid recipe')
+      }
     } catch (error) {
       console.error('n8n webhook error:', error)
+      // Fall through to fallback
     }
   }
 
@@ -152,6 +170,9 @@ export async function POST(request: NextRequest) {
     if (!requestData.ingredients || requestData.ingredients.length === 0) {
       return NextResponse.json({ error: 'Ingredients are required' }, { status: 400 })
     }
+
+    console.log('Generating recipe for user:', user.id)
+    console.log('Request data:', requestData)
 
     // Generate recipe using AI
     const aiRecipe = await generateRecipeWithAI(requestData)
