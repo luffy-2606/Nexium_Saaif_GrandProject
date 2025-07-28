@@ -160,9 +160,14 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="bg-white border-t mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="text-center text-gray-600">
-            <p>© 2024 Recipe Generator. Made with ❤️ for food lovers.</p>
+            <p>
+              Made by{' '}
+              <a href="https://saaif.vercel.app" className="text-orange-500" target="_blank" rel="noopener noreferrer">
+                Saaif Suleman
+              </a>
+              </p> 
           </div>
         </div>
       </footer>

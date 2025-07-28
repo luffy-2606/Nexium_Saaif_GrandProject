@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { ChefHat, Loader2, Plus, X } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { supabase } from '@/lib/supabase'
 
 interface RecipeFormData {
   ingredients: string[]
@@ -73,10 +74,19 @@ export default function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorPr
         dietaryRestrictions: dietaryRestrictions.filter(r => r.trim()),
       }
 
+      // Get the current session for authorization
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        toast.error('Please log in to generate recipes')
+        return
+      }
+
       const response = await fetch('/api/generate-recipe', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify(requestData),
       })
