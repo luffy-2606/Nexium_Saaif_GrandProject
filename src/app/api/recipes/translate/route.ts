@@ -8,85 +8,78 @@ interface TranslateRequest {
   language: string
 }
 
+// Remove LibreTranslate helper function - n8n only
+
+// Function to translate recipe using ONLY your n8n workflow
 async function translateRecipeWithAI(recipe: any, targetLanguage: string) {
-  const prompt = `
-Translate the following recipe to ${targetLanguage}. Maintain the original structure and measurements.
+  // Check if translation webhook is configured
+  const translationWebhook = process.env.N8N_TRANSLATION_WEBHOOK || process.env.N8N_WEBHOOK_URL
+  
+  if (!translationWebhook) {
+    throw new Error('Translation service not configured. Please set up N8N_TRANSLATION_WEBHOOK or N8N_WEBHOOK_URL.')
+  }
 
-Title: ${recipe.title}
-Ingredients: ${recipe.ingredients.join('\n')}
-Instructions: ${recipe.instructions.join('\n')}
-
-Please provide the translation in JSON format:
-{
-  "title": "translated title",
-  "ingredients": ["translated ingredient 1", "translated ingredient 2", ...],
-  "instructions": ["translated instruction 1", "translated instruction 2", ...]
-}
-`
-
-  // Option 1: Using OpenAI (if API key is provided)
-  if (process.env.OPENAI_API_KEY) {
-    try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
+  console.log('🌐 Calling your n8n translation workflow...')
+  console.log('Recipe:', recipe.title, 'to', targetLanguage)
+  
+  try {
+    const response = await fetch(translationWebhook, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(process.env.N8N_WEBHOOK_TOKEN && {
+          'Authorization': `Bearer ${process.env.N8N_WEBHOOK_TOKEN}`
+        })
+      },
+      body: JSON.stringify({
+        type: 'recipe_translation',
+        recipe: {
+          title: recipe.title,
+          ingredients: recipe.ingredients,
+          instructions: recipe.instructions
         },
-        body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: [
-            {
-              role: 'system',
-              content: `You are a professional translator specializing in culinary translations. Always respond with valid JSON and maintain cooking measurements and techniques accurately.`
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          max_tokens: 1000,
-          temperature: 0.3,
-        }),
-      })
+        targetLanguage: targetLanguage,
+        sourceLanguage: 'english'
+      }),
+    })
 
-      const data = await response.json()
-      const content = data.choices[0].message.content
-      
-      return JSON.parse(content)
-    } catch (error) {
-      console.error('OpenAI translation error:', error)
+    const responseText = await response.text()
+    console.log('n8n translation response status:', response.status)
+    console.log('n8n translation raw response:', responseText)
+
+    if (!response.ok) {
+      throw new Error(`n8n translation workflow failed with status ${response.status}: ${response.statusText}`)
     }
-  }
 
-  // Option 2: Using n8n webhook (if URL is provided)
-  if (process.env.N8N_WEBHOOK_URL) {
+    let result
     try {
-      const response = await fetch(process.env.N8N_WEBHOOK_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'recipe_translation',
-          recipe: recipe,
-          targetLanguage: targetLanguage,
-          prompt: prompt
-        }),
-      })
-
-      return await response.json()
-    } catch (error) {
-      console.error('n8n translation error:', error)
+      result = JSON.parse(responseText)
+    } catch (parseError) {
+      console.error('n8n translation response parse error:', parseError)
+      throw new Error('n8n translation workflow returned invalid JSON response')
     }
-  }
 
-  // Fallback: Mock translation for demo
-  return {
-    title: `[${targetLanguage.toUpperCase()}] ${recipe.title}`,
-    ingredients: recipe.ingredients.map((ing: string) => `[${targetLanguage.toUpperCase()}] ${ing}`),
-    instructions: recipe.instructions.map((inst: string) => `[${targetLanguage.toUpperCase()}] ${inst}`)
-  }
+    console.log('✅ n8n translation workflow response:', result)
+
+    // Handle different response formats from your n8n workflow
+    if (result.success && result.translation) {
+      return result.translation
+    } else if (result.translation) {
+      return result.translation
+    } else if (result.data && result.data.translation) {
+      return result.data.translation
+    } else if (result.title && result.ingredients && result.instructions) {
+      // Direct translation format
+      return result
+    } else {
+      console.error('n8n translation workflow did not return expected format:', result)
+      throw new Error('n8n translation workflow response is missing translation data')
+    }
+      } catch (error) {
+      console.error('❌ n8n translation workflow error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      throw new Error(`Translation failed: ${errorMessage}`)
+    }
 }
 
 export async function POST(request: NextRequest) {

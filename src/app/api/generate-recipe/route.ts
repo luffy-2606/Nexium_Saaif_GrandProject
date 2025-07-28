@@ -11,146 +11,72 @@ interface RecipeRequest {
   cookingTime: number
 }
 
-// Function to call AI service (OpenAI/HuggingFace alternative to n8n)
+// Function to generate recipe using ONLY your n8n workflow
 async function generateRecipeWithAI(requestData: RecipeRequest) {
-  const prompt = `
-Create a detailed recipe with the following requirements:
-- Ingredients available: ${requestData.ingredients.join(', ')}
-- Dietary restrictions: ${requestData.dietaryRestrictions.join(', ') || 'None'}
-- Cuisine style: ${requestData.cuisine || 'Any'}
-- Servings: ${requestData.servings}
-- Difficulty: ${requestData.difficulty}
-- Maximum cooking time: ${requestData.cookingTime} minutes
-
-Please provide:
-1. Recipe title
-2. Brief description
-3. Complete ingredients list with measurements
-4. Step-by-step instructions
-5. Estimated prep time and cook time
-
-Format the response as JSON with the following structure:
-{
-  "title": "Recipe Title",
-  "description": "Brief description",
-  "ingredients": ["ingredient with measurement", ...],
-  "instructions": ["step 1", "step 2", ...],
-  "prepTime": number_in_minutes,
-  "cookTime": number_in_minutes,
-  "tips": "optional cooking tips"
-}
-`
-
-  // Option 1: Using OpenAI (if API key is provided)
-  if (process.env.OPENAI_API_KEY) {
-    try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a professional chef who creates detailed, practical recipes. Always respond with valid JSON.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          max_tokens: 1500,
-          temperature: 0.7,
-        }),
-      })
-
-      const data = await response.json()
-      const content = data.choices[0].message.content
-      
-      // Parse the JSON response
-      const recipeData = JSON.parse(content)
-      return recipeData
-    } catch (error) {
-      console.error('OpenAI API error:', error)
-    }
+  // Check if n8n webhook is configured
+  if (!process.env.N8N_WEBHOOK_URL) {
+    throw new Error('Recipe generation service not configured. Please set up N8N_WEBHOOK_URL.')
   }
 
-  // Option 2: Using n8n webhook (if URL is provided)
-  if (process.env.N8N_WEBHOOK_URL) {
-    try {
-      console.log('Calling n8n webhook for recipe generation...')
-      
-      const response = await fetch(process.env.N8N_WEBHOOK_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(process.env.N8N_WEBHOOK_TOKEN && {
-            'Authorization': `Bearer ${process.env.N8N_WEBHOOK_TOKEN}`
-          })
-        },
-        body: JSON.stringify({
-          data: requestData
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`n8n webhook responded with ${response.status}: ${response.statusText}`)
-      }
-
-      const result = await response.json()
-      console.log('n8n webhook response:', result)
-
-      // Check if n8n returned a successful response
-      if (result.success && result.recipe) {
-        return result.recipe
-      } else if (result.recipe) {
-        // Sometimes n8n might not include success flag but still return recipe
-        return result.recipe
-      } else {
-        throw new Error('n8n did not return a valid recipe')
-      }
-    } catch (error) {
-      console.error('n8n webhook error:', error)
-      // Fall through to fallback
-    }
-  }
-
-  // Fallback: Generate a mock recipe for demo purposes
-  return generateMockRecipe(requestData)
-}
-
-function generateMockRecipe(requestData: RecipeRequest): any {
-  const mainIngredient = requestData.ingredients[0] || 'Mixed vegetables'
-  const cuisineStyle = requestData.cuisine || 'International'
+  console.log('🚀 Calling your n8n recipe generation workflow...')
+  console.log('Payload:', requestData)
   
-  return {
-    title: `${cuisineStyle} ${mainIngredient} Delight`,
-    description: `A delicious ${requestData.difficulty} ${cuisineStyle.toLowerCase()} dish featuring ${mainIngredient.toLowerCase()} and other fresh ingredients.`,
-    ingredients: [
-      `2 cups ${mainIngredient}`,
-      ...requestData.ingredients.slice(1).map(ing => `1 cup ${ing}`),
-      '2 cloves garlic, minced',
-      '1 tbsp olive oil',
-      'Salt and pepper to taste',
-      '1 tsp herbs (oregano, thyme, or basil)'
-    ],
-    instructions: [
-      'Prep all ingredients by washing, chopping, and measuring.',
-      'Heat olive oil in a large pan over medium heat.',
-      'Add garlic and sauté for 1-2 minutes until fragrant.',
-      `Add ${mainIngredient} and cook for 5-7 minutes.`,
-      'Add remaining ingredients and cook until tender.',
-      'Season with salt, pepper, and herbs to taste.',
-      'Serve hot and enjoy!'
-    ],
-    prepTime: Math.max(10, Math.floor(requestData.cookingTime * 0.3)),
-    cookTime: Math.max(15, Math.floor(requestData.cookingTime * 0.7)),
-    tips: `For best results, ensure all ingredients are fresh. This recipe works well with ${requestData.dietaryRestrictions.length > 0 ? requestData.dietaryRestrictions.join(' and ') + ' dietary requirements' : 'any dietary preferences'}.`
-  }
+  try {
+    const response = await fetch(process.env.N8N_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(process.env.N8N_WEBHOOK_TOKEN && {
+          'Authorization': `Bearer ${process.env.N8N_WEBHOOK_TOKEN}`
+        })
+      },
+      body: JSON.stringify({
+        type: 'recipe_generation',
+        data: requestData,
+        prompt: `Generate a detailed recipe with ingredients: ${requestData.ingredients.join(', ')}, cuisine: ${requestData.cuisine || 'Any'}, servings: ${requestData.servings}, difficulty: ${requestData.difficulty}`
+      }),
+    })
+
+    const responseText = await response.text()
+    console.log('n8n response status:', response.status)
+    console.log('n8n raw response:', responseText)
+
+    if (!response.ok) {
+      throw new Error(`n8n recipe generation workflow failed with status ${response.status}: ${response.statusText}`)
+    }
+
+    let result
+    try {
+      result = JSON.parse(responseText)
+    } catch (parseError) {
+      console.error('n8n response parse error:', parseError)
+      throw new Error('n8n workflow returned invalid JSON response')
+    }
+
+    console.log('✅ n8n workflow response:', result)
+
+    // Handle different response formats from your n8n workflow
+    if (result.success && result.recipe) {
+      return result.recipe
+    } else if (result.recipe) {
+      return result.recipe
+    } else if (result.data && result.data.recipe) {
+      return result.data.recipe
+    } else if (result.title && result.ingredients && result.instructions) {
+      // Direct recipe format
+      return result
+    } else {
+      console.error('n8n workflow did not return expected recipe format:', result)
+      throw new Error('n8n workflow response is missing recipe data')
+    }
+      } catch (error) {
+      console.error('❌ n8n workflow error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      throw new Error(`Recipe generation failed: ${errorMessage}`)
+    }
 }
+
+// Remove mock recipe generator - n8n only
 
 export async function POST(request: NextRequest) {
   try {
