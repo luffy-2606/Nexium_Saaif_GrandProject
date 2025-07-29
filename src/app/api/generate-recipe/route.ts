@@ -55,18 +55,25 @@ async function generateRecipeWithAI(requestData: RecipeRequest) {
 
     console.log('✅ n8n workflow response:', result)
 
+    // Handle array response from n8n (it returns an array)
+    let recipeData = result
+    if (Array.isArray(result) && result.length > 0) {
+      recipeData = result[0] // Get first item from array
+      console.log('✅ Extracted from array:', recipeData)
+    }
+
     // Handle different response formats from your n8n workflow
-    if (result.success && result.recipe) {
-      return result.recipe
-    } else if (result.recipe) {
-      return result.recipe
-    } else if (result.data && result.data.recipe) {
-      return result.data.recipe
-    } else if (result.title && result.ingredients && result.instructions) {
+    if (recipeData.success && recipeData.recipe) {
+      return recipeData.recipe
+    } else if (recipeData.recipe) {
+      return recipeData.recipe
+    } else if (recipeData.data && recipeData.data.recipe) {
+      return recipeData.data.recipe
+    } else if (recipeData.title && recipeData.ingredients && recipeData.instructions) {
       // Direct recipe format
-      return result
+      return recipeData
     } else {
-      console.error('n8n workflow did not return expected recipe format:', result)
+      console.error('n8n workflow did not return expected recipe format:', recipeData)
       throw new Error('n8n workflow response is missing recipe data')
     }
       } catch (error) {
@@ -102,14 +109,15 @@ export async function POST(request: NextRequest) {
 
     // Generate recipe using AI
     const aiRecipe = await generateRecipeWithAI(requestData)
+    console.log('✅ AI Recipe received:', JSON.stringify(aiRecipe, null, 2))
 
     // Create recipe object for database
     const recipe = {
       userId: user.id,
-      title: aiRecipe.title,
-      description: aiRecipe.description,
-      ingredients: aiRecipe.ingredients,
-      instructions: aiRecipe.instructions,
+      title: aiRecipe.title || 'Generated Recipe',
+      description: aiRecipe.description || `A delicious recipe with ${requestData.ingredients.join(', ')}`,
+      ingredients: aiRecipe.ingredients || ['No ingredients specified'],
+      instructions: aiRecipe.instructions || ['No instructions provided'],
       dietaryRestrictions: requestData.dietaryRestrictions,
       cuisine: requestData.cuisine || null,
       prepTime: aiRecipe.prepTime || null,
@@ -140,11 +148,14 @@ export async function POST(request: NextRequest) {
     await db.collection('userHistory').insertOne(history)
 
     // Return the generated recipe with ID
-    return NextResponse.json({
+    const finalResponse = {
       id: result.insertedId.toString(),
       ...recipe,
-      tips: aiRecipe.tips
-    })
+      tips: aiRecipe.tips || []
+    }
+    console.log('✅ Final API response:', JSON.stringify(finalResponse, null, 2))
+    
+    return NextResponse.json(finalResponse)
 
   } catch (error) {
     console.error('Recipe generation error:', error)
