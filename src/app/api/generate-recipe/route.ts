@@ -18,10 +18,7 @@ async function generateRecipeWithAI(requestData: RecipeRequest) {
     throw new Error('Recipe generation service not configured. Please set up N8N_WEBHOOK_URL.')
   }
 
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🚀 Calling your n8n recipe generation workflow...')
-    console.log('Payload:', requestData)
-  }
+  console.log('🚀 Calling n8n recipe generation workflow...')
   
   try {
     const response = await fetch(process.env.N8N_WEBHOOK_URL, {
@@ -41,36 +38,36 @@ async function generateRecipeWithAI(requestData: RecipeRequest) {
 
     const responseText = await response.text()
     
-    if (process.env.NODE_ENV === 'development') {
-      console.log('n8n response status:', response.status)
-      console.log('n8n raw response:', responseText)
-    }
+    console.log('n8n response status:', response.status)
 
     if (!response.ok) {
-      throw new Error(`n8n recipe generation workflow failed with status ${response.status}: ${response.statusText}`)
+      console.error('❌ n8n webhook failed:')
+      console.error('Status:', response.status, response.statusText)
+      console.error('Response:', responseText)
+      throw new Error(`n8n recipe generation workflow failed with status ${response.status}: ${response.statusText}. Response: ${responseText}`)
+    }
+
+    if (!responseText || responseText.trim() === '') {
+      console.error('❌ n8n webhook returned empty response')
+      throw new Error('n8n workflow returned empty response. Please check your n8n workflow configuration - it must return recipe JSON data using a "Respond to Webhook" node.')
     }
 
     let result
     try {
       result = JSON.parse(responseText)
     } catch (parseError) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('n8n response parse error:', parseError)
-      }
-      throw new Error('n8n workflow returned invalid JSON response')
+      console.error('❌ n8n response parse error:', parseError)
+      console.error('Raw response that failed to parse:', responseText)
+      throw new Error(`n8n workflow returned invalid JSON response: ${parseError}. Raw response: ${responseText}`)
     }
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('✅ n8n workflow response:', result)
-    }
+    console.log('✅ n8n workflow responded successfully')
 
     // Handle array response from n8n (it returns an array)
     let recipeData = result
     if (Array.isArray(result) && result.length > 0) {
       recipeData = result[0] // Get first item from array
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ Extracted from array:', recipeData)
-      }
+      console.log('✅ Extracted recipe from response array')
     }
 
     // Handle different response formats from your n8n workflow
@@ -84,15 +81,12 @@ async function generateRecipeWithAI(requestData: RecipeRequest) {
       // Direct recipe format
       return recipeData
     } else {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('n8n workflow did not return expected recipe format:', recipeData)
-      }
-      throw new Error('n8n workflow response is missing recipe data')
+      console.error('❌ n8n workflow did not return expected recipe format:', recipeData)
+      console.error('Available keys in response:', Object.keys(recipeData))
+      throw new Error(`n8n workflow response is missing recipe data. Got: ${JSON.stringify(recipeData, null, 2)}`)
     }
       } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('❌ n8n workflow error:', error)
-      }
+      console.error('❌ n8n workflow error:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
       throw new Error(`Recipe generation failed: ${errorMessage}`)
     }
@@ -119,17 +113,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Ingredients are required' }, { status: 400 })
     }
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Generating recipe for user:', user.id)
-      console.log('Request data:', requestData)
-    }
+    console.log('🍳 Generating recipe for user:', user.id)
 
     // Generate recipe using AI
     const aiRecipe = await generateRecipeWithAI(requestData)
     
-    if (process.env.NODE_ENV === 'development') {
-      console.log('✅ AI Recipe received:', JSON.stringify(aiRecipe, null, 2))
-    }
+    console.log('✅ AI Recipe received successfully')
 
     // Create recipe object for database
     const recipe = {
@@ -174,18 +163,15 @@ export async function POST(request: NextRequest) {
       tips: aiRecipe.tips || []
     }
     
-    if (process.env.NODE_ENV === 'development') {
-      console.log('✅ Final API response:', JSON.stringify(finalResponse, null, 2))
-    }
+    console.log('✅ Recipe saved to database with ID:', result.insertedId.toString())
     
     return NextResponse.json(finalResponse)
 
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Recipe generation error:', error)
-    }
+    console.error('❌ Recipe generation error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
     return NextResponse.json(
-      { error: 'Failed to generate recipe' },
+      { error: errorMessage },
       { status: 500 }
     )
   }
