@@ -19,31 +19,48 @@ async function generateRecipeWithAI(requestData: RecipeRequest) {
   }
 
   console.log('🚀 Calling n8n recipe generation workflow...')
+  console.log('🌍 Environment:', process.env.NODE_ENV)
+  console.log('📍 n8n URL prefix:', process.env.N8N_WEBHOOK_URL.substring(0, 50) + '...')
+  console.log('🔐 Has n8n token:', !!process.env.N8N_WEBHOOK_TOKEN)
+  
+  const payload = {
+    type: 'recipe_generation',
+    data: requestData,
+    prompt: `Generate a detailed recipe with ingredients: ${requestData.ingredients.join(', ')}, cuisine: ${requestData.cuisine || 'Any'}, servings: ${requestData.servings}, difficulty: ${requestData.difficulty}`
+  }
+  
+  console.log('📤 Payload size:', JSON.stringify(payload).length, 'bytes')
   
   try {
+    const requestStartTime = Date.now()
+    
     const response = await fetch(process.env.N8N_WEBHOOK_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'User-Agent': 'Vercel-Recipe-Generator/1.0',
         ...(process.env.N8N_WEBHOOK_TOKEN && {
           'Authorization': `Bearer ${process.env.N8N_WEBHOOK_TOKEN}`
         })
       },
-      body: JSON.stringify({
-        type: 'recipe_generation',
-        data: requestData,
-        prompt: `Generate a detailed recipe with ingredients: ${requestData.ingredients.join(', ')}, cuisine: ${requestData.cuisine || 'Any'}, servings: ${requestData.servings}, difficulty: ${requestData.difficulty}`
-      }),
+      body: JSON.stringify(payload),
     })
-
-    const responseText = await response.text()
     
-    console.log('n8n response status:', response.status)
+    const requestDuration = Date.now() - requestStartTime
+    console.log(`📡 n8n request completed in ${requestDuration}ms`)
+
+    console.log('📊 n8n response status:', response.status)
+    console.log('📋 n8n response headers:', Object.fromEntries(response.headers.entries()))
+    
+    const responseText = await response.text()
+    console.log('📏 Response size:', responseText.length, 'bytes')
+    console.log('📄 Response preview:', responseText.substring(0, 200) + (responseText.length > 200 ? '...' : ''))
 
     if (!response.ok) {
       console.error('❌ n8n webhook failed:')
       console.error('Status:', response.status, response.statusText)
-      console.error('Response:', responseText)
+      console.error('Full response:', responseText)
+      console.error('Request duration:', requestDuration, 'ms')
       throw new Error(`n8n recipe generation workflow failed with status ${response.status}: ${response.statusText}. Response: ${responseText}`)
     }
 
@@ -93,8 +110,18 @@ async function generateRecipeWithAI(requestData: RecipeRequest) {
     }
       } catch (error) {
       console.error('❌ n8n workflow error:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      throw new Error(`Recipe generation failed: ${errorMessage}`)
+      console.error('❌ Error type:', error instanceof Error ? error.constructor.name : typeof error)
+      console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+      
+      // More specific error handling
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error(`Network error reaching n8n: ${error.message}. Check if n8n URL is accessible from Vercel.`)
+      } else if (error instanceof Error && error.message.includes('timeout')) {
+        throw new Error(`n8n request timed out: ${error.message}. The request may be taking too long.`)
+      } else {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+        throw new Error(`Recipe generation failed: ${errorMessage}`)
+      }
     }
 }
 
