@@ -6,18 +6,16 @@ A modern web application that transforms your available ingredients into delicio
 
 - **Magic Link Authentication**: Secure, passwordless login using Supabase Auth
 - **AI Recipe Generation**: Create unique recipes based on available ingredients
-- **Recipe Management**: Save, organize, and favorite your recipes
 - **Search History**: Track and revisit your recipe generation history
 - **Dietary Restrictions**: Support for various dietary preferences and restrictions
-- **Responsive Design**: Beautiful UI that works on all devices
 - **Real-time Updates**: Live updates and notifications
 
 ## 🚀 Tech Stack
 
 - **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
 - **Authentication**: Supabase Auth (Magic Link)
-- **Database**: Supabase (PostgreSQL) + MongoDB
-- **AI Integration**: OpenAI GPT-3.5/4, Hugging Face, n8n workflows
+- **Database**: MongoDB
+- **AI Integration**: n8n workflows & Gemini
 - **Deployment**: Vercel (with automatic CI/CD)
 - **UI Components**: Custom components with Radix UI primitives
 
@@ -28,78 +26,8 @@ Before you begin, ensure you have:
 - Node.js 18+ installed
 - npm or yarn package manager
 - A Supabase account
-- A MongoDB Atlas account (or local MongoDB)
-- OpenAI API key (optional, for AI features)
-- n8n instance (optional, for workflow automation)
-
-## 🔧 Setup Instructions
-
-### 1. Clone the Repository
-
-```bash
-git clone <your-repo-url>
-cd grand-project
-```
-
-### 2. Install Dependencies
-
-```bash
-npm install
-```
-
-### 3. Environment Variables
-
-Create a `.env.local` file in the root directory:
-
-```env
-# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-
-# MongoDB Configuration
-MONGODB_URI=your_mongodb_connection_string
-MONGODB_DB_NAME=recipe_generator
-
-# AI Service Configuration (Optional)
-OPENAI_API_KEY=your_openai_api_key
-HUGGINGFACE_API_KEY=your_huggingface_api_key
-
-# n8n Webhook URLs (Optional)
-N8N_WEBHOOK_URL=your_n8n_webhook_url
-
-# App Configuration
-NEXTAUTH_SECRET=your_nextauth_secret
-NEXTAUTH_URL=http://localhost:3000
-```
-
-### 4. Database Setup
-
-#### Supabase Setup
-1. Create a new Supabase project at [supabase.com](https://supabase.com)
-2. Get your project URL and anon key from the project settings
-3. Add them to your `.env.local` file
-
-#### MongoDB Setup  
-1. Create a MongoDB Atlas cluster at [mongodb.com](https://mongodb.com)
-2. Get your connection string from the cluster dashboard
-3. Add it to your `.env.local` file
-
-### 5. AI Integration (Required)
-
-#### n8n Workflows
-1. Create an n8n Cloud account at [n8n.io](https://n8n.io)
-2. Set up a webhook trigger for recipe generation
-3. Configure your AI workflow to generate recipes
-4. Get your webhook URL and add it to `.env.local`
-
-### 6. Run the Development Server
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+- A MongoDB Atlas account 
+- n8n instance (with Gemini API Key)
 
 ## 📖 Setup Requirements
 
@@ -153,73 +81,6 @@ src/
 - Translate recipes to different languages
 - View your recipe history
 
-## 🔄 API Endpoints
-
-### Recipe Generation
-```http
-POST /api/generate-recipe
-Content-Type: application/json
-Authorization: Bearer <supabase_token>
-
-{
-  "ingredients": ["chicken", "rice", "vegetables"],
-  "dietaryRestrictions": ["gluten-free"],
-  "cuisine": "Asian",
-  "servings": 4,
-  "difficulty": "medium",
-  "cookingTime": 45
-}
-```
-
-### Recipe Translation
-```http
-POST /api/recipes/translate
-Content-Type: application/json
-Authorization: Bearer <supabase_token>
-
-{
-  "recipeId": "recipe_id_here",
-  "language": "spanish"
-}
-```
-
-## 🚀 Deployment
-
-### Vercel Deployment (Recommended)
-
-1. **Connect to Vercel**:
-   ```bash
-   npm install -g vercel
-   vercel
-   ```
-
-2. **Environment Variables**:
-   - Add all environment variables in Vercel dashboard
-   - Update Supabase redirect URLs for production
-
-3. **Database Configuration**:
-   - Update MongoDB network access for Vercel IPs
-   - Configure Supabase for production domain
-
-### Manual Deployment
-
-1. **Build the application**:
-   ```bash
-   npm run build
-   ```
-
-2. **Start production server**:
-   ```bash
-   npm start
-   ```
-
-## 🔒 Security Considerations
-
-- **Environment Variables**: Never commit sensitive keys to version control
-- **Database Security**: Use MongoDB Atlas with IP whitelisting
-- **Authentication**: Supabase handles secure authentication flows
-- **API Protection**: All API routes require authentication
-- **Rate Limiting**: Consider implementing rate limiting for AI API calls
 
 ## 🚀 Development
 
@@ -241,50 +102,6 @@ npm start
 - **Vercel Analytics**: Monitor application performance
 - **n8n Dashboard**: Track workflow executions and errors
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🆘 Troubleshooting
-
-### Common Issues
-
-1. **Authentication not working**:
-   - Check Supabase configuration
-   - Verify redirect URLs
-   - Check environment variables
-
-2. **Recipe generation failing**:
-   - Verify API keys (OpenAI/Hugging Face)
-   - Check n8n webhook URLs
-   - Review API rate limits
-
-3. **Database connection issues**:
-   - Verify MongoDB connection string
-   - Check network access settings
-   - Ensure database user permissions
-
-### Getting Help
-
-- Check the detailed setup guides
-- Review the troubleshooting sections in each guide
-- Open an issue on GitHub
-- Check the documentation links in each setup guide
-
-## 🔄 Updates and Maintenance
-
-- **Dependencies**: Regularly update packages for security
-- **Database**: Monitor and optimize query performance
-- **AI APIs**: Track usage and costs
-- **Backups**: Ensure regular database backups
 
 ## 🎉 Features Roadmap
 
@@ -296,6 +113,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [ ] Grocery list generation
 - [ ] Recipe ratings and reviews
 
----
-
-Built with ❤️ for food lovers who want to discover new recipes with AI technology.
