@@ -66,39 +66,25 @@ export default function RecipesPage() {
   }, [user, filter, page])
 
   const loadRecipes = async () => {
-    console.log('📚 Loading recipes...', { page, filter })
     setLoadingRecipes(true)
     try {
       const session = await supabase.auth.getSession()
-      console.log('🔐 Session check:', !!session.data.session)
-      
-      const url = `/api/recipes?page=${page}&limit=12&filter=${filter}`
-      console.log('🌐 API call:', url)
-      
-      const response = await fetch(url, {
+      const response = await fetch(`/api/recipes?page=${page}&limit=12&filter=${filter}`, {
         headers: {
           'Authorization': `Bearer ${session.data.session?.access_token}`
         }
       })
 
-      console.log('📡 Response status:', response.status)
-
       if (response.ok) {
         const data = await response.json()
-        console.log('✅ Recipes loaded:', data)
-        setRecipes(data.recipes || [])
-        setTotalCount(data.pagination?.totalCount || 0)
+        setRecipes(data.recipes)
+        setTotalCount(data.pagination.totalCount)
       } else {
-        const errorText = await response.text()
-        console.error('❌ API Error:', response.status, errorText)
-        throw new Error(`Failed to load recipes: ${response.status}`)
+        throw new Error('Failed to load recipes')
       }
     } catch (error) {
-      console.error('❌ Error loading recipes:', error)
+      console.error('Error loading recipes:', error)
       toast.error('Failed to load recipes')
-      // Set empty state on error
-      setRecipes([])
-      setTotalCount(0)
     } finally {
       setLoadingRecipes(false)
     }

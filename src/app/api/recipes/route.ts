@@ -32,7 +32,6 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-      console.log('📚 Loading recipes from database...')
       const db = await getDatabase()
       
       // Build query based on filter
@@ -74,7 +73,6 @@ export async function GET(request: NextRequest) {
         updatedAt: recipe.updatedAt
       }))
 
-      console.log('✅ Recipes loaded successfully')
       return NextResponse.json({
         recipes: formattedRecipes,
         pagination: {

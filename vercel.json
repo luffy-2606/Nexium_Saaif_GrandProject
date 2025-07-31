@@ -2,12 +2,6 @@
   "functions": {
     "src/app/api/generate-recipe/route.ts": {
       "maxDuration": 60
-    },
-    "src/app/api/debug/test-n8n/route.ts": {
-      "maxDuration": 30  
-    },
-    "src/app/api/debug/test-mongodb/route.ts": {
-      "maxDuration": 30
     }
   }
 }

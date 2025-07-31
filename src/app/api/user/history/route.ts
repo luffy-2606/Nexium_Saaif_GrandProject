@@ -31,7 +31,6 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-      console.log('📜 Loading search history from database...')
       const db = await getDatabase()
       const skip = (page - 1) * limit
 
@@ -56,7 +55,6 @@ export async function GET(request: NextRequest) {
         timestamp: item.timestamp
       }))
 
-      console.log('✅ Search history loaded successfully')
       return NextResponse.json({
         history: formattedHistory,
         pagination: {

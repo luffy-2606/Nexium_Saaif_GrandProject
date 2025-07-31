@@ -25,7 +25,6 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-      console.log('📊 Loading dashboard data from database...')
       const db = await getDatabase()
 
       // Get user's recipes and stats
@@ -59,7 +58,6 @@ export async function GET(request: NextRequest) {
         createdAt: recipe.createdAt
       }))
 
-      console.log('✅ Dashboard data loaded successfully')
       return NextResponse.json({
         recentRecipes,
         stats: {

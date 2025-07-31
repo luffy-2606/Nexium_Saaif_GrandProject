@@ -76,15 +76,22 @@ NEXTAUTH_URL=http://localhost:3000
 ### 4. Database Setup
 
 #### Supabase Setup
-Follow the detailed guide: [SUPABASE_SETUP.md](./SUPABASE_SETUP.md)
+1. Create a new Supabase project at [supabase.com](https://supabase.com)
+2. Get your project URL and anon key from the project settings
+3. Add them to your `.env.local` file
 
-#### MongoDB Setup
-Follow the detailed guide: [MONGODB_SETUP.md](./MONGODB_SETUP.md)
+#### MongoDB Setup  
+1. Create a MongoDB Atlas cluster at [mongodb.com](https://mongodb.com)
+2. Get your connection string from the cluster dashboard
+3. Add it to your `.env.local` file
 
-### 5. AI Integration (Optional)
+### 5. AI Integration (Required)
 
 #### n8n Workflows
-Follow the detailed guide: [N8N_SETUP.md](./N8N_SETUP.md)
+1. Create an n8n Cloud account at [n8n.io](https://n8n.io)
+2. Set up a webhook trigger for recipe generation
+3. Configure your AI workflow to generate recipes
+4. Get your webhook URL and add it to `.env.local`
 
 ### 6. Run the Development Server
 
@@ -94,11 +101,11 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## 📖 Detailed Setup Guides
+## 📖 Setup Requirements
 
-- **[Supabase Setup](./SUPABASE_SETUP.md)** - Complete guide for authentication and user management
-- **[MongoDB Setup](./MONGODB_SETUP.md)** - Database configuration for recipes and user data
-- **[n8n Setup](./N8N_SETUP.md)** - AI workflow automation setup
+- **Supabase** - Authentication and user management
+- **MongoDB Atlas** - Database for recipes and user data  
+- **n8n Cloud** - AI workflow automation
 
 ## 🏗️ Project Structure
 
@@ -214,17 +221,17 @@ Authorization: Bearer <supabase_token>
 - **API Protection**: All API routes require authentication
 - **Rate Limiting**: Consider implementing rate limiting for AI API calls
 
-## 🧪 Testing
+## 🚀 Development
 
 ```bash
-# Run all tests
-npm test
+# Start development server
+npm run dev
 
-# Run tests in watch mode
-npm run test:watch
+# Build for production
+npm run build
 
-# Run tests with coverage
-npm run test:coverage
+# Start production server
+npm start
 ```
 
 ## 📊 Monitoring

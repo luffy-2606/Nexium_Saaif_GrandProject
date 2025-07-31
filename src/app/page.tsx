@@ -43,7 +43,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center space-x-2">
-              <ChefHat className="w-8 h-8 text-orange-500" />
+               <ChefHat className="w-8 h-8 text-orange-500" /> 
               <span className="text-xl font-bold text-gray-900">Recipe Generator</span>
             </div>
             <Link href="/login">
@@ -94,6 +94,18 @@ export default function Home() {
               <CardTitle>Save & Organize</CardTitle>
               <CardDescription>
                 Save your favorite recipes, track your cooking history, and build your personal recipe collection
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="text-center">
+            <CardHeader>
+              <div className="mx-auto mb-4 w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                <Globe className="w-8 h-8 text-blue-600" />
+              </div>
+              <CardTitle>Easy to Use</CardTitle>
+              <CardDescription>
+                Our user-friendly interface makes it easy to add ingredients, set preferences, and generate recipes
               </CardDescription>
             </CardHeader>
           </Card>
@@ -157,6 +169,7 @@ export default function Home() {
               <a href="https://saaif.vercel.app" className="text-orange-500" target="_blank" rel="noopener noreferrer">
                 Saaif Suleman
               </a>
+              , as part of Nexium internship
               </p> 
           </div>
         </div>
