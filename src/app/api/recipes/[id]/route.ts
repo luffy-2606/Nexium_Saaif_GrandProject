@@ -5,7 +5,7 @@ import { ObjectId } from 'mongodb'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get the authenticated user
@@ -18,7 +18,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = params
+    const { id } = await context.params
 
     if (!id || !ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid recipe ID' }, { status: 400 })
