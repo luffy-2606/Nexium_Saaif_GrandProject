@@ -19,63 +19,89 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const filter = searchParams.get('filter') // 'all', 'favorites', 'recent'
 
-    const db = await getDatabase()
-    
-    // Build query based on filter
-    let query: any = { userId: user.id }
-    
-    if (filter === 'favorites') {
-      query.isFavorite = true
-    }
-
-    const skip = (page - 1) * limit
-
-    // Get recipes with pagination
-    const [recipes, totalCount] = await Promise.all([
-      db.collection('recipes')
-        .find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .toArray(),
-      db.collection('recipes').countDocuments(query)
-    ])
-
-    // Format recipes for frontend
-    const formattedRecipes = recipes.map(recipe => ({
-      id: recipe._id.toString(),
-      title: recipe.title,
-      description: recipe.description,
-      ingredients: recipe.ingredients,
-      instructions: recipe.instructions,
-      prepTime: recipe.prepTime,
-      cookTime: recipe.cookTime,
-      servings: recipe.servings,
-      difficulty: recipe.difficulty,
-      cuisine: recipe.cuisine,
-      dietaryRestrictions: recipe.dietaryRestrictions,
-      isFavorite: recipe.isFavorite,
-      aiGenerated: recipe.aiGenerated,
-      createdAt: recipe.createdAt,
-      updatedAt: recipe.updatedAt
-    }))
-
-    return NextResponse.json({
-      recipes: formattedRecipes,
+    // Default fallback data
+    const fallbackData = {
+      recipes: [],
       pagination: {
         page,
         limit,
-        totalCount,
-        totalPages: Math.ceil(totalCount / limit),
-        hasMore: skip + recipes.length < totalCount
+        totalCount: 0,
+        totalPages: 0,
+        hasMore: false
       }
-    })
+    }
+
+    try {
+      console.log('📚 Loading recipes from database...')
+      const db = await getDatabase()
+      
+      // Build query based on filter
+      let query: any = { userId: user.id }
+      
+      if (filter === 'favorites') {
+        query.isFavorite = true
+      }
+
+      const skip = (page - 1) * limit
+
+      // Get recipes with pagination
+      const [recipes, totalCount] = await Promise.all([
+        db.collection('recipes')
+          .find(query)
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .toArray(),
+        db.collection('recipes').countDocuments(query)
+      ])
+
+      // Format recipes for frontend
+      const formattedRecipes = recipes.map(recipe => ({
+        id: recipe._id.toString(),
+        title: recipe.title,
+        description: recipe.description,
+        ingredients: recipe.ingredients,
+        instructions: recipe.instructions,
+        prepTime: recipe.prepTime,
+        cookTime: recipe.cookTime,
+        servings: recipe.servings,
+        difficulty: recipe.difficulty,
+        cuisine: recipe.cuisine,
+        dietaryRestrictions: recipe.dietaryRestrictions,
+        isFavorite: recipe.isFavorite,
+        aiGenerated: recipe.aiGenerated,
+        createdAt: recipe.createdAt,
+        updatedAt: recipe.updatedAt
+      }))
+
+      console.log('✅ Recipes loaded successfully')
+      return NextResponse.json({
+        recipes: formattedRecipes,
+        pagination: {
+          page,
+          limit,
+          totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+          hasMore: skip + recipes.length < totalCount
+        }
+      })
+
+    } catch (dbError) {
+      console.warn('⚠️ Database timeout - returning fallback recipes data:', dbError)
+      return NextResponse.json(fallbackData)
+    }
 
   } catch (error) {
-    console.error('Get recipes error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch recipes' },
-      { status: 500 }
-    )
+    console.error('❌ Get recipes error:', error)
+    return NextResponse.json({
+      recipes: [],
+      pagination: {
+        page: 1,
+        limit: 20,
+        totalCount: 0,
+        totalPages: 0,
+        hasMore: false
+      }
+    })
   }
 } 

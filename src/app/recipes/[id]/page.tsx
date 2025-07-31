@@ -77,26 +77,38 @@ export default function RecipeDetailPage() {
   }, [user, recipeId])
 
   const loadRecipe = async () => {
+    console.log('📄 Loading individual recipe...', { recipeId })
     setLoadingRecipe(true)
     try {
       const session = await supabase.auth.getSession()
-      const response = await fetch(`/api/recipes/${recipeId}`, {
+      console.log('🔐 Session check:', !!session.data.session)
+      
+      const url = `/api/recipes/${recipeId}`
+      console.log('🌐 API call:', url)
+      
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${session.data.session?.access_token}`
         }
       })
 
+      console.log('📡 Response status:', response.status)
+
       if (response.ok) {
         const data = await response.json()
+        console.log('✅ Recipe loaded:', data)
         setRecipe(data)
       } else if (response.status === 404) {
+        console.warn('⚠️ Recipe not found')
         toast.error('Recipe not found')
         router.push('/recipes')
       } else {
-        throw new Error('Failed to load recipe')
+        const errorText = await response.text()
+        console.error('❌ API Error:', response.status, errorText)
+        throw new Error(`Failed to load recipe: ${response.status}`)
       }
     } catch (error) {
-      console.error('Error loading recipe:', error)
+      console.error('❌ Error loading recipe:', error)
       toast.error('Failed to load recipe')
       router.push('/recipes')
     } finally {

@@ -56,25 +56,39 @@ export default function HistoryPage() {
   }, [user, page])
 
   const loadHistory = async () => {
+    console.log('📜 Loading search history...', { page })
     setLoadingHistory(true)
     try {
       const session = await supabase.auth.getSession()
-      const response = await fetch(`/api/user/history?page=${page}&limit=20`, {
+      console.log('🔐 Session check:', !!session.data.session)
+      
+      const url = `/api/user/history?page=${page}&limit=20`
+      console.log('🌐 API call:', url)
+      
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${session.data.session?.access_token}`
         }
       })
 
+      console.log('📡 Response status:', response.status)
+
       if (response.ok) {
         const data = await response.json()
-        setHistory(data.history)
-        setTotalCount(data.pagination.totalCount)
+        console.log('✅ History loaded:', data)
+        setHistory(data.history || [])
+        setTotalCount(data.pagination?.totalCount || 0)
       } else {
-        throw new Error('Failed to load history')
+        const errorText = await response.text()
+        console.error('❌ API Error:', response.status, errorText)
+        throw new Error(`Failed to load history: ${response.status}`)
       }
     } catch (error) {
-      console.error('Error loading history:', error)
+      console.error('❌ Error loading history:', error)
       toast.error('Failed to load search history')
+      // Set empty state on error
+      setHistory([])
+      setTotalCount(0)
     } finally {
       setLoadingHistory(false)
     }

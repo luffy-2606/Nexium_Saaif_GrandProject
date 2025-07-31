@@ -14,55 +14,75 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const db = await getDatabase()
-
-    // Get user's recipes and stats
-    const [recipes, history] = await Promise.all([
-      db.collection('recipes').find({ userId: user.id })
-        .sort({ createdAt: -1 })
-        .limit(10)
-        .toArray(),
-      db.collection('userHistory').find({ userId: user.id })
-        .sort({ timestamp: -1 })
-        .limit(20)
-        .toArray()
-    ])
-
-    // Calculate stats
-    const totalRecipes = await db.collection('recipes').countDocuments({ userId: user.id })
-    const favoriteRecipes = await db.collection('recipes').countDocuments({ 
-      userId: user.id, 
-      isFavorite: true 
-    })
-    const recentSearches = history.length
-
-    // Format recent recipes
-    const recentRecipes = recipes.map(recipe => ({
-      id: recipe._id.toString(),
-      title: recipe.title,
-      servings: recipe.servings,
-      difficulty: recipe.difficulty,
-      cuisine: recipe.cuisine,
-      isFavorite: recipe.isFavorite,
-      createdAt: recipe.createdAt
-    }))
-
-    return NextResponse.json({
-      recentRecipes,
+    // Default fallback data
+    const fallbackData = {
+      recentRecipes: [],
       stats: {
-        totalRecipes,
-        favoriteRecipes,
-        recentSearches
+        totalRecipes: 0,
+        favoriteRecipes: 0,
+        recentSearches: 0
       }
-    })
+    }
+
+    try {
+      console.log('📊 Loading dashboard data from database...')
+      const db = await getDatabase()
+
+      // Get user's recipes and stats
+      const [recipes, history] = await Promise.all([
+        db.collection('recipes').find({ userId: user.id })
+          .sort({ createdAt: -1 })
+          .limit(10)
+          .toArray(),
+        db.collection('userHistory').find({ userId: user.id })
+          .sort({ timestamp: -1 })
+          .limit(20)
+          .toArray()
+      ])
+
+      // Calculate stats
+      const totalRecipes = await db.collection('recipes').countDocuments({ userId: user.id })
+      const favoriteRecipes = await db.collection('recipes').countDocuments({ 
+        userId: user.id, 
+        isFavorite: true 
+      })
+      const recentSearches = history.length
+
+      // Format recent recipes
+      const recentRecipes = recipes.map(recipe => ({
+        id: recipe._id.toString(),
+        title: recipe.title,
+        servings: recipe.servings,
+        difficulty: recipe.difficulty,
+        cuisine: recipe.cuisine,
+        isFavorite: recipe.isFavorite,
+        createdAt: recipe.createdAt
+      }))
+
+      console.log('✅ Dashboard data loaded successfully')
+      return NextResponse.json({
+        recentRecipes,
+        stats: {
+          totalRecipes,
+          favoriteRecipes,
+          recentSearches
+        }
+      })
+
+    } catch (dbError) {
+      console.warn('⚠️ Database timeout - returning fallback dashboard data:', dbError)
+      return NextResponse.json(fallbackData)
+    }
 
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Dashboard data error:', error)
-    }
-    return NextResponse.json(
-      { error: 'Failed to load dashboard data' },
-      { status: 500 }
-    )
+    console.error('❌ Dashboard data error:', error)
+    return NextResponse.json({
+      recentRecipes: [],
+      stats: {
+        totalRecipes: 0,
+        favoriteRecipes: 0,
+        recentSearches: 0
+      }
+    })
   }
 } 
