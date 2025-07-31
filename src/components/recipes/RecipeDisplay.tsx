@@ -20,7 +20,7 @@ interface Recipe {
   cuisine?: string
   dietaryRestrictions: string[]
   isFavorite?: boolean
-
+  tips?: string[]
 }
 
 interface RecipeDisplayProps {
@@ -184,6 +184,24 @@ export default function RecipeDisplay({
             ))}
           </ol>
         </div>
+
+        {/* Tips */}
+        {recipe.tips && recipe.tips.length > 0 && (
+          <div>
+            <h3 className="text-xl font-semibold mb-4 flex items-center">
+              <span className="mr-2">💡</span>
+              Cooking Tips
+            </h3>
+            <ul className="space-y-2">
+              {recipe.tips.map((tip, index) => (
+                <li key={index} className="flex items-start space-x-3">
+                  <span className="text-blue-500 mt-1">•</span>
+                  <span className="flex-1">{tip}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Actions */}
         {showActions && (

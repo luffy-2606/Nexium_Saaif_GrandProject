@@ -62,6 +62,7 @@ async function generateRecipeWithAI(requestData: RecipeRequest) {
     }
 
     console.log('✅ n8n workflow responded successfully')
+    console.log('📋 Raw n8n response structure:', JSON.stringify(result, null, 2))
 
     // Handle array response from n8n (it returns an array)
     let recipeData = result
@@ -70,15 +71,20 @@ async function generateRecipeWithAI(requestData: RecipeRequest) {
       console.log('✅ Extracted recipe from response array')
     }
 
+    console.log('📋 Recipe data to process:', JSON.stringify(recipeData, null, 2))
+
     // Handle different response formats from your n8n workflow
     if (recipeData.success && recipeData.recipe) {
+      console.log('✅ Using success + recipe format')
       return recipeData.recipe
     } else if (recipeData.recipe) {
+      console.log('✅ Using recipe format')
       return recipeData.recipe
     } else if (recipeData.data && recipeData.data.recipe) {
+      console.log('✅ Using data.recipe format')
       return recipeData.data.recipe
     } else if (recipeData.title && recipeData.ingredients && recipeData.instructions) {
-      // Direct recipe format
+      console.log('✅ Using direct recipe format')
       return recipeData
     } else {
       console.error('❌ n8n workflow did not return expected recipe format:', recipeData)
@@ -95,16 +101,31 @@ async function generateRecipeWithAI(requestData: RecipeRequest) {
 // Remove mock recipe generator - n8n only
 
 export async function POST(request: NextRequest) {
+  console.log('🚀 API Route: Starting recipe generation request')
+  
   try {
+    // Check environment variables first
+    if (!process.env.N8N_WEBHOOK_URL) {
+      console.error('❌ N8N_WEBHOOK_URL environment variable is not set')
+      return NextResponse.json({ error: 'Recipe generation service not configured' }, { status: 500 })
+    }
+    
+    console.log('✅ N8N_WEBHOOK_URL is configured')
+    
     // Get the authenticated user
     const authHeader = request.headers.get('Authorization')
+    console.log('🔐 Checking authentication...')
+    
     const { data: { user }, error: authError } = await supabase.auth.getUser(
       authHeader?.replace('Bearer ', '') || ''
     )
 
     if (authError || !user) {
+      console.error('❌ Authentication failed:', authError)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    
+    console.log('✅ User authenticated:', user.id)
 
     const requestData: RecipeRequest = await request.json()
 
@@ -119,6 +140,7 @@ export async function POST(request: NextRequest) {
     const aiRecipe = await generateRecipeWithAI(requestData)
     
     console.log('✅ AI Recipe received successfully')
+    console.log('🤖 AI Recipe structure:', JSON.stringify(aiRecipe, null, 2))
 
     // Create recipe object for database
     const recipe = {
@@ -140,38 +162,53 @@ export async function POST(request: NextRequest) {
       isFavorite: false
     }
 
-    // Save to MongoDB
-    const db = await getDatabase()
-    const result = await db.collection('recipes').insertOne(recipe)
+    let recipeId = 'temp-' + Date.now() // Fallback ID if database save fails
 
-    // Save search history
-    const history = {
-      userId: user.id,
-      searchQuery: `${requestData.ingredients.join(', ')} - ${requestData.cuisine || 'Any cuisine'}`,
-      ingredients: requestData.ingredients,
-      dietaryRestrictions: requestData.dietaryRestrictions,
-      generatedRecipeId: result.insertedId.toString(),
-      timestamp: new Date()
+    // Try to save to MongoDB (optional - don't fail if this times out)
+    try {
+      console.log('💾 Attempting to save recipe to database...')
+      const db = await getDatabase()
+      const result = await db.collection('recipes').insertOne(recipe)
+      recipeId = result.insertedId.toString()
+      console.log('✅ Recipe saved to database with ID:', recipeId)
+
+      // Save search history
+      try {
+        const history = {
+          userId: user.id,
+          searchQuery: `${requestData.ingredients.join(', ')} - ${requestData.cuisine || 'Any cuisine'}`,
+          ingredients: requestData.ingredients,
+          dietaryRestrictions: requestData.dietaryRestrictions,
+          generatedRecipeId: recipeId,
+          timestamp: new Date()
+        }
+        await db.collection('userHistory').insertOne(history)
+        console.log('✅ Search history saved')
+      } catch (historyError) {
+        console.warn('⚠️ Failed to save search history (non-critical):', historyError)
+      }
+    } catch (dbError) {
+      console.warn('⚠️ Failed to save recipe to database (recipe will still be returned):', dbError)
+      console.warn('⚠️ Using temporary ID for recipe display')
     }
 
-    await db.collection('userHistory').insertOne(history)
-
-    // Return the generated recipe with ID
+    // Return the generated recipe with ID (even if database save failed)
     const finalResponse = {
-      id: result.insertedId.toString(),
+      id: recipeId,
       ...recipe,
       tips: aiRecipe.tips || []
     }
     
-    console.log('✅ Recipe saved to database with ID:', result.insertedId.toString())
+    console.log('🚀 Final response being sent to frontend:', JSON.stringify(finalResponse, null, 2))
     
     return NextResponse.json(finalResponse)
 
   } catch (error) {
     console.error('❌ Recipe generation error:', error)
+    console.error('❌ Error stack trace:', error instanceof Error ? error.stack : 'No stack trace available')
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
     return NextResponse.json(
-      { error: errorMessage },
+      { error: `Recipe generation failed: ${errorMessage}` },
       { status: 500 }
     )
   }

@@ -25,6 +25,7 @@ interface Recipe {
   cuisine?: string
   dietaryRestrictions: string[]
   isFavorite?: boolean
+  tips?: string[]
 }
 
 interface User {

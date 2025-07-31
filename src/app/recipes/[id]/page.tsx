@@ -37,6 +37,7 @@ interface Recipe {
   originalLanguage?: string
   createdAt: string
   updatedAt: string
+  tips?: string[]
 }
 
 interface User {

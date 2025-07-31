@@ -92,10 +92,37 @@ export default function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorPr
       })
 
       if (!response.ok) {
-        throw new Error('Failed to generate recipe')
+        const errorText = await response.text()
+        console.error('Recipe generation failed:', response.status, errorText)
+        throw new Error(`Failed to generate recipe: ${response.status} ${response.statusText}`)
       }
 
       const recipe = await response.json()
+      console.log('🍳 Recipe received from API:', JSON.stringify(recipe, null, 2))
+      
+      // More detailed validation
+      if (!recipe) {
+        console.error('❌ No recipe object received')
+        throw new Error('No recipe data received from server')
+      }
+      
+      if (!recipe.title) {
+        console.error('❌ Recipe missing title:', recipe)
+        throw new Error('Recipe is missing a title')
+      }
+      
+      if (!recipe.ingredients || !Array.isArray(recipe.ingredients) || recipe.ingredients.length === 0) {
+        console.error('❌ Recipe missing or invalid ingredients:', recipe)
+        throw new Error('Recipe is missing ingredients')
+      }
+      
+      if (!recipe.instructions || !Array.isArray(recipe.instructions) || recipe.instructions.length === 0) {
+        console.error('❌ Recipe missing or invalid instructions:', recipe)
+        throw new Error('Recipe is missing instructions')
+      }
+      
+      console.log('✅ Recipe validation passed')
+      
       onRecipeGenerated(recipe)
       toast.success('Recipe generated successfully!')
       

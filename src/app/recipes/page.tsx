@@ -25,6 +25,7 @@ interface Recipe {
   isFavorite?: boolean
   aiGenerated?: boolean
   createdAt: string
+  tips?: string[]
 }
 
 interface User {
