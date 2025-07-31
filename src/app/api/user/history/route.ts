@@ -54,7 +54,9 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Get history error:', error)
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Get history error:', error)
+    }
     return NextResponse.json(
       { error: 'Failed to fetch history' },
       { status: 500 }

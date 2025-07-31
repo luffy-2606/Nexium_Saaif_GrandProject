@@ -6,7 +6,6 @@ A modern web application that transforms your available ingredients into delicio
 
 - **Magic Link Authentication**: Secure, passwordless login using Supabase Auth
 - **AI Recipe Generation**: Create unique recipes based on available ingredients
-- **Multi-Language Support**: Translate recipes into multiple languages
 - **Recipe Management**: Save, organize, and favorite your recipes
 - **Search History**: Track and revisit your recipe generation history
 - **Dietary Restrictions**: Support for various dietary preferences and restrictions

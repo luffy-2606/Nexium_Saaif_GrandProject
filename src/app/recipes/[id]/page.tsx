@@ -130,32 +130,7 @@ export default function RecipeDetailPage() {
     }
   }
 
-  const handleTranslate = async (language: string) => {
-    if (!recipe) return
 
-    try {
-      const session = await supabase.auth.getSession()
-      const response = await fetch('/api/recipes/translate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.data.session?.access_token}`
-        },
-        body: JSON.stringify({ recipeId: recipe.id, language })
-      })
-
-      if (response.ok) {
-        const translatedRecipe = await response.json()
-        setRecipe(translatedRecipe)
-        toast.success(`Recipe translated to ${language}!`)
-      } else {
-        throw new Error('Failed to translate recipe')
-      }
-    } catch (error) {
-      console.error('Error translating recipe:', error)
-      toast.error('Failed to translate recipe')
-    }
-  }
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {

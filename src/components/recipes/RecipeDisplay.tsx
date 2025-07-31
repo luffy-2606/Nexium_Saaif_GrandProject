@@ -20,31 +20,21 @@ interface Recipe {
   cuisine?: string
   dietaryRestrictions: string[]
   isFavorite?: boolean
-  translations?: {
-    [language: string]: {
-      title: string
-      ingredients: string[]
-      instructions: string[]
-    }
-  }
+
 }
 
 interface RecipeDisplayProps {
   recipe: Recipe
   onSave?: (recipe: Recipe) => void
-  onTranslate?: (recipe: Recipe, language: string) => void
   showActions?: boolean
 }
 
 export default function RecipeDisplay({ 
   recipe, 
   onSave, 
-  onTranslate, 
   showActions = true 
 }: RecipeDisplayProps) {
   const [isSaving, setIsSaving] = useState(false)
-  const [isTranslating, setIsTranslating] = useState(false)
-  const [selectedLanguage, setSelectedLanguage] = useState('')
   const [isFavorite, setIsFavorite] = useState(recipe.isFavorite || false)
 
   const handleSave = async () => {
@@ -80,19 +70,7 @@ export default function RecipeDisplay({
     }
   }
 
-  const handleTranslate = async () => {
-    if (!onTranslate || !selectedLanguage) return
-    
-    setIsTranslating(true)
-    try {
-      await onTranslate(recipe, selectedLanguage)
-      toast.success(`Recipe translated to ${selectedLanguage}`)
-    } catch (error) {
-      toast.error('Failed to translate recipe')
-    } finally {
-      setIsTranslating(false)
-    }
-  }
+
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -210,38 +188,13 @@ export default function RecipeDisplay({
         {/* Actions */}
         {showActions && (
           <div className="border-t pt-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="flex-1"
-              >
-                {isSaving ? 'Saving...' : 'Save Recipe'}
-              </Button>
-              
-              <div className="flex gap-2 flex-1">
-                <select
-                  value={selectedLanguage}
-                  onChange={(e) => setSelectedLanguage(e.target.value)}
-                  className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                >
-                  <option value="">Select language...</option>
-                  <option value="spanish">Spanish</option>
-                  <option value="french">French</option>
-                  <option value="italian">Italian</option>
-                  <option value="german">German</option>
-                  <option value="chinese">Chinese</option>
-                  <option value="japanese">Japanese</option>
-                </select>
-                <Button
-                  onClick={handleTranslate}
-                  disabled={isTranslating || !selectedLanguage}
-                  variant="outline"
-                >
-                  {isTranslating ? 'Translating...' : 'Translate'}
-                </Button>
-              </div>
-            </div>
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="w-full"
+            >
+              {isSaving ? 'Saving...' : 'Save Recipe'}
+            </Button>
           </div>
         )}
       </CardContent>

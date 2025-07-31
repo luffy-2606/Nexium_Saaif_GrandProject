@@ -113,28 +113,7 @@ export default function Dashboard() {
     }
   }
 
-  const handleTranslateRecipe = async (recipe: Recipe, language: string) => {
-    try {
-      const response = await fetch('/api/recipes/translate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        },
-        body: JSON.stringify({ recipeId: recipe.id, language })
-      })
 
-      if (response.ok) {
-        const translatedRecipe = await response.json()
-        setGeneratedRecipe(translatedRecipe)
-        toast.success(`Recipe translated to ${language}!`)
-      } else {
-        throw new Error('Failed to translate recipe')
-      }
-    } catch (error) {
-      throw error
-    }
-  }
 
   if (loading) {
     return (
@@ -215,7 +194,6 @@ export default function Dashboard() {
                 <RecipeDisplay
                   recipe={generatedRecipe}
                   onSave={handleSaveRecipe}
-                  onTranslate={handleTranslateRecipe}
                 />
               </div>
             )}

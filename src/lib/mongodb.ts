@@ -47,13 +47,7 @@ export interface Recipe {
   difficulty: 'easy' | 'medium' | 'hard'
   aiGenerated: boolean
   originalLanguage: string
-  translations?: {
-    [language: string]: {
-      title: string
-      ingredients: string[]
-      instructions: string[]
-    }
-  }
+
   createdAt: Date
   updatedAt: Date
   isFavorite: boolean

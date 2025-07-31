@@ -3,7 +3,9 @@ import { supabase } from '@/lib/supabase'
 
 export async function GET() {
   try {
+    if (process.env.NODE_ENV === 'development') {
     console.log('Testing Supabase connection...')
+  }
     
     // Test 1: Check environment variables
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -166,7 +168,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
     
-    console.log(`Testing magic link for email: ${email}`)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Testing magic link for email: ${email}`)
+    }
     
     // Test actual magic link sending
     const { data, error } = await supabase.auth.signInWithOtp({

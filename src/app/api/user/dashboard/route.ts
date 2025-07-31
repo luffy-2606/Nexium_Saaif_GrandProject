@@ -57,7 +57,9 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Dashboard data error:', error)
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Dashboard data error:', error)
+    }
     return NextResponse.json(
       { error: 'Failed to load dashboard data' },
       { status: 500 }

@@ -52,7 +52,6 @@ export async function GET(
       isFavorite: recipe.isFavorite,
       aiGenerated: recipe.aiGenerated,
       originalLanguage: recipe.originalLanguage,
-      translations: recipe.translations,
       createdAt: recipe.createdAt,
       updatedAt: recipe.updatedAt
     }
@@ -60,7 +59,9 @@ export async function GET(
     return NextResponse.json(formattedRecipe)
 
   } catch (error) {
-    console.error('Get recipe error:', error)
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Get recipe error:', error)
+    }
     return NextResponse.json(
       { error: 'Failed to fetch recipe' },
       { status: 500 }

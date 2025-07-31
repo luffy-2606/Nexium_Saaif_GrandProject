@@ -84,17 +84,7 @@ export default function Home() {
             </CardHeader>
           </Card>
 
-          <Card className="text-center">
-            <CardHeader>
-              <div className="mx-auto mb-4 w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                <Globe className="w-8 h-8 text-blue-600" />
-              </div>
-              <CardTitle>Multi-Language Support</CardTitle>
-              <CardDescription>
-                Translate your recipes into multiple languages and explore international cuisines
-              </CardDescription>
-            </CardHeader>
-          </Card>
+
 
           <Card className="text-center">
             <CardHeader>
