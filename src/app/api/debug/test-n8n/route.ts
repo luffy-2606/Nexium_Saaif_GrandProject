@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
         error: 'n8n returned invalid JSON',
         responseBody: responseText,
         duration,
-        parseError: parseError.message,
+        parseError: parseError instanceof Error ? parseError.message : 'Parse error occurred',
         timestamp: new Date().toISOString()
       })
     }
