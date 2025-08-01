@@ -151,6 +151,9 @@ export default function Home() {
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Ready to Start Cooking?</h2>
           <p className="text-xl text-gray-600 mb-8">
             Join thousands of home cooks who are discovering new recipes every day
+            <br />
+            <br />
+            <span className="text-red-500">This project will stop working on 10th August 2025.</span>
           </p>
           <Link href="/login">
             <Button size="lg" className="text-lg px-8 py-3">
